@@ -6,7 +6,11 @@ import cors from "cors";
 import errorHandler from "errorhandler";
 import mongoose from "mongoose";
 
+
 mongoose.promise = global.Promise;
+mongoose.connect('mongodb://localhost/lightblog');
+mongoose.set('debug', true);
+
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -27,4 +31,39 @@ mongoose.connect('mongodb://localhose/lightblog');
 mongoose.set('debug', true);
 
 // Add models
+require('./models/Articles');
 // Add routes
+
+app.use(require('./routes'));
+
+app.use((req, res, next) => {
+    const err = new Error('Not Found');
+    err.status = 404;
+    next(err);
+});
+
+if (!isProduction) {
+    app.use((err, req, res) => {
+        res.status(err.status || 500);
+
+        res.json({
+            errors: {
+                message: err.message,
+                error: err,
+            },
+        })
+    })
+}
+
+app.use((err, req, res) => {
+    res.status(err.status || 500);
+
+    res.json({
+        errors: {
+            message: err.message,
+            error: {},
+        },
+    })
+})
+
+const server = app.listen(8000, ()=> console.log('Server started on http://localhost:8000'));
